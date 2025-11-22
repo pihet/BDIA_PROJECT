@@ -1,0 +1,179 @@
+# ============================================
+# 1. ConfigMap: Debezium CDC 및 네트워크 설정
+#    * 로컬 쿠버네티스 전용 구성입니다.
+#    * AWS 전환 시에는 RDS/Aurora 로 교체하므로 이 StatefulSet/Service 리소스를 배포하지 않습니다.
+# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-config
+  labels:
+    app: mariadb
+data:
+  # MySQL 이미지에서 안정적으로 로드되는 설정 파일
+  debezium.cnf: |
+    [mysqld]
+    # --- Debezium CDC 필수 설정 ---
+    log_bin = mysql-bin               
+    binlog_format = ROW               
+    server_id = 1                     
+    
+    # --- 네트워크 설정 ---
+    bind-address = 0.0.0.0            
+    
+    # --- Airflow 호환성 ---
+    explicit_defaults_for_timestamp = 1
+    sql_mode = STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+    
+    # --- 한글 지원 (UTF-8) ---
+    character-set-server = utf8mb4
+    collation-server = utf8mb4_unicode_ci
+    init_connect = 'SET NAMES utf8mb4'
+
+---
+# ============================================
+# 1-1. ConfigMap: 초기 사용자 권한 부여 스크립트
+# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-initdb
+  labels:
+    app: mariadb
+data:
+  01-grant-debezium.sql: |
+    -- Debezium 계정 CDC 권한 부여
+    GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'debezium_user'@'%';
+    FLUSH PRIVILEGES;
+
+---
+# 2. StatefulSet: MySQL 5.7 이미지 사용 (설정 로드 안정성 강화)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb
+spec:
+  serviceName: "mariadb-internal-service" 
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: mariadb 
+  template: 
+    metadata:
+      labels:
+        app: mariadb 
+    spec:
+      containers:
+      - name: mariadb
+        # --- [최종 수정] MySQL 5.7 공식 이미지로 변경 ---
+        # 5.7 버전은 설정 파일 로딩에 더 유연하여 binlog_format 문제를 해결할 가능성이 높습니다.
+        image: mysql:5.7 
+        ports:
+        - containerPort: 3306 
+          name: mariadb-port
+        env:
+          # --- 인증 및 DB 설정 ---
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: MYSQL_DATABASE 
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: MYSQL_PASSWORD
+            
+        volumeMounts:
+        - name: mariadb-data
+          mountPath: /var/lib/mysql
+        - name: mariadb-config-volume 
+          # ConfigMap 파일을 /etc/mysql/conf.d/ 경로에 마운트합니다.
+          mountPath: /etc/mysql/conf.d/debezium.cnf 
+          subPath: debezium.cnf                     
+        - name: mariadb-initdb-volume
+          mountPath: /docker-entrypoint-initdb.d/01-grant-debezium.sql
+          subPath: 01-grant-debezium.sql
+      
+      volumes: 
+      - name: mariadb-config-volume
+        configMap:
+          name: mariadb-config
+          items:
+          - key: debezium.cnf
+            path: debezium.cnf
+      - name: mariadb-initdb-volume
+        configMap:
+          name: mariadb-initdb
+          items:
+          - key: 01-grant-debezium.sql
+            path: 01-grant-debezium.sql
+          
+      volumeClaimTemplates: 
+      - metadata:
+          name: mariadb-data
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 1Gi 
+
+---
+# 3. Service (mariadb-internal-service) - ClusterIP (변경 없음)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-internal-service
+spec:
+  selector:
+    app: mariadb
+  ports:
+  - protocol: TCP
+    port: 3306 
+    targetPort: 3306
+  type: ClusterIP
+
+---
+# 4. Headless Service (mariadb-headless-service) - (변경 없음)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-headless-service
+  labels:
+    app: mariadb
+spec:
+  clusterIP: None
+  selector:
+    app: mariadb
+  ports:
+  - protocol: TCP
+    port: 3306 
+    targetPort: 3306
+
+---
+# 5. Service (mariadb-external-service) - NodePort (변경 없음)
+#    * VSCode/DBeaver 등 외부 접근을 위해 사용
+#    * EKS에서는 load balancer 대신 `kubectl port-forward` 또는 RDS 직접 연결을 권장
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-external-service
+spec:
+  selector:
+    app: mariadb
+  ports:
+  - protocol: TCP
+    port: 3307
+    targetPort: 3306
+    nodePort: 30307
+  type: NodePort

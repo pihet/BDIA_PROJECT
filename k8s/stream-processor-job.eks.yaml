@@ -1,0 +1,63 @@
+# AWS EKS에서 사용할 Spark Job 매니페스트
+# - <> 값: 실제 ECR/MSK/RDS/S3/Region 으로 대체
+# - IAM 권한은 `spark-operator` ServiceAccount(IRSA)로 부여
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stream-processor-job
+  namespace: data-pipeline
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: spark-operator
+      restartPolicy: Never
+      containers:
+        - name: spark
+          image: <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/spark-stream:prod
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CHECKPOINT_DIR
+              value: s3://<CHECKPOINT_BUCKET>/spark/kafka_to_db
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: <MSK_BOOTSTRAP_BROKERS>
+            - name: KAFKA_TOPIC
+              value: mariadb.fulfillment.inventory_db.products
+            - name: MARIADB_JDBC_URL
+              # ============================================
+              # MariaDB 연결 URL 설정
+              # ============================================
+              # AWS RDS 사용 시:
+              #   value: jdbc:mariadb://<RDS_ENDPOINT>:3306/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'&useUnicode=true&characterEncoding=UTF-8
+              #   예시: jdbc:mariadb://mydb.abc123.ap-northeast-2.rds.amazonaws.com:3306/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'&useUnicode=true&characterEncoding=UTF-8
+              # 
+              # AWS EKS 내부 MariaDB StatefulSet 사용 시:
+              #   value: jdbc:mariadb://mariadb-internal-service.<NAMESPACE>.svc.cluster.local:3306/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'&useUnicode=true&characterEncoding=UTF-8
+              #   예시: jdbc:mariadb://mariadb-internal-service.default.svc.cluster.local:3306/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'&useUnicode=true&characterEncoding=UTF-8
+              # 
+              # AWS 외부 MariaDB 사용 시 (로컬과 동일):
+              #   value: jdbc:mariadb://<EXTERNAL_DB_HOST>:<PORT>/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'&useUnicode=true&characterEncoding=UTF-8
+              #   예시: jdbc:mariadb://172.16.11.114:3307/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'&useUnicode=true&characterEncoding=UTF-8
+              # ============================================
+              value: jdbc:mariadb://<RDS_ENDPOINT>:3306/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'&useUnicode=true&characterEncoding=UTF-8
+            - name: MARIADB_USERNAME
+              value: airflow_admin
+            - name: AWS_REGION
+              value: <REGION>
+            - name: AWS_ROLE_ARN
+              value: arn:aws:iam::<ACCOUNT_ID>:role/AirflowSparkRole
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: airflow-db-secret
+                  key: password
+          envFrom:
+            - secretRef:
+                name: kafka-msk-sasl
+          volumeMounts:
+            - name: spark-config
+              mountPath: /opt/app/config
+      volumes:
+        - name: spark-config
+          configMap:
+            name: spark-runtime-config

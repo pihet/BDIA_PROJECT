@@ -1,0 +1,31 @@
+# car 데이터베이스의 UserVehicle, Driving_Session 테이블을 Kafka로 전송하는 Debezium Connector 설정
+# - car DB의 변경사항을 실시간으로 Kafka 토픽으로 전송
+# - Spark가 Kafka에서 읽어서 inventory_db로 저장
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: car-db-connector-spec
+  labels:
+    app: kafka-connect
+data:
+  car-db-connector.json: |
+    {
+      "name": "car-db-source-connector",
+      "config": {
+        "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+        "tasks.max": "1",
+        "database.hostname": "172.16.11.114",
+        "database.port": "3307",
+        "database.user": "debezium_user",
+        "database.password": "debezium_pw",
+        "database.server.id": "2000",
+        "database.server.name": "car",
+        "database.include.list": "car",
+        "topic.prefix": "mariadb.car",
+        "schema.history.internal.kafka.bootstrap.servers": "kafka-0.kafka-headless-service.default.svc.cluster.local:9092",
+        "schema.history.internal.kafka.topic": "schema-changes.car",
+        "table.include.list": "car.UserVehicle,car.Driving_Session",
+        "decimal.handling.mode": "double"
+      }
+    }
+

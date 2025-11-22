@@ -1,0 +1,153 @@
+# ============================================
+# 1. ConfigMap: Kafka Connect Worker 설정
+# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connect-config
+  labels:
+    app: kafka-connect
+data:
+  # Debezium Connect는 대부분 환경 변수 기반으로 설정되므로,
+  # 실제 내용은 유효성 검사용 더미 파일로 구성
+  connect-distributed.properties: |
+    # Placeholder file - all configuration is provided via environment variables
+    bootstrap.servers=kafka-0.kafka-headless-service.default.svc.cluster.local:9092
+    key.converter=org.apache.kafka.connect.json.JsonConverter
+    value.converter=org.apache.kafka.connect.json.JsonConverter
+
+---
+# ============================================
+# 2. Headless Service: 내부 통신용 REST API
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-connect-headless
+  labels:
+    app: kafka-connect
+spec:
+  clusterIP: None
+  selector:
+    app: kafka-connect
+  ports:
+    - name: rest-api
+      protocol: TCP
+      port: 8083
+      targetPort: 8083
+
+---
+# ============================================
+# 3. Deployment: Kafka Connect Worker Pod
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-connect
+  labels:
+    app: kafka-connect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-connect
+  template:
+    metadata:
+      labels:
+        app: kafka-connect
+    spec:
+      # --- Kafka 브로커 대기용 Init Container ---
+      initContainers:
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Kafka...";
+              until nc -zvw3 kafka-0.kafka-headless-service.default.svc.cluster.local 9092;
+              do echo "Kafka not ready yet. Sleeping for 5s..."; sleep 5; done;
+              echo "Kafka is ready, starting Connect Pod."
+
+      # --- Kafka Connect 컨테이너 ---
+      containers:
+        - name: kafka-connect
+          image: debezium/connect:2.6
+          ports:
+            - containerPort: 8083
+          env:
+            # --- Core Converter 설정 ---
+            - name: CONNECT_KEY_CONVERTER
+              value: org.apache.kafka.connect.json.JsonConverter
+            - name: CONNECT_VALUE_CONVERTER
+              value: org.apache.kafka.connect.json.JsonConverter
+
+            # --- Converter 세부 옵션 ---
+            - name: CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE
+              value: "true"
+            - name: CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
+              value: "true"
+            - name: CONNECT_INTERNAL_KEY_CONVERTER
+              value: org.apache.kafka.connect.json.JsonConverter
+            - name: CONNECT_INTERNAL_VALUE_CONVERTER
+              value: org.apache.kafka.connect.json.JsonConverter
+
+            # --- Kafka 브로커 연결 ---
+            - name: CONNECT_BOOTSTRAP_SERVERS
+              value: kafka-0.kafka-headless-service.default.svc.cluster.local:9092
+
+            # --- Worker 내부 토픽 (필수 변수 포함) ---
+            - name: CONNECT_CONFIG_STORAGE_TOPIC
+              value: connect-configs
+            - name: CONNECT_OFFSET_STORAGE_TOPIC
+              value: connect-offsets
+            - name: CONNECT_STATUS_STORAGE_TOPIC
+              value: connect-statuses
+            
+            # Debezium 스크립트가 요구하는 접두사 없는 필수 설정
+            - name: CONFIG_STORAGE_TOPIC
+              value: connect-configs
+            - name: OFFSET_STORAGE_TOPIC
+              value: connect-offsets
+            - name: STATUS_STORAGE_TOPIC
+              value: connect-statuses
+            
+            - name: CONNECT_GROUP_ID
+              value: connect-cluster
+            - name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+              value: "1"
+            - name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+              value: "1"
+
+            # --- REST API 설정 ---
+            - name: CONNECT_LISTENERS
+              value: "http://0.0.0.0:8083"
+            - name: CONNECT_REST_HOST_NAME
+              value: "0.0.0.0"
+            - name: CONNECT_REST_ADVERTISED_HOST_NAME
+              value: kafka-connect-headless
+            - name: CONNECT_REST_PORT
+              value: "8083"
+            - name: CONNECT_REST_ADVERTISED_PORT
+              value: "8083"
+
+            # --- JVM 메모리 및 플러그인 경로 ---
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx512m -Xms512m"
+            - name: CONNECT_PLUGIN_PATH
+              value: "/kafka/connect"
+
+            # --- (옵션) 볼륨 마운트 구조 ---
+          volumeMounts:
+            - name: connect-config
+              # /kafka/config 경로에서 /tmp/connect-config로 변경하여 Read-only 충돌을 방지
+              mountPath: /tmp/connect-config
+              # readOnly: true 설정은 기본값이므로 제거했습니다.
+
+      # --- ConfigMap 마운트 ---
+      volumes:
+        - name: connect-config
+          configMap:
+            name: connect-config

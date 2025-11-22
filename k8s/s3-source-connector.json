@@ -1,0 +1,29 @@
+# S3 → Kafka Source Connector 설정
+# - Kafka Connect에서 S3 버킷의 파일을 읽어서 Kafka 토픽으로 전송
+# - 로컬: kubectl apply -f k8s/s3-source-connector-configmap.yaml
+# - AWS: MSK Connect에서 이 JSON을 사용하여 Connector 생성
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3-source-connector-spec
+  labels:
+    app: kafka-connect
+data:
+  s3-source-connector.json: |
+    {
+      "name": "s3-source-connector",
+      "config": {
+        "connector.class": "io.confluent.connect.s3.source.S3SourceConnector",
+        "tasks.max": "1",
+        "s3.bucket.name": "<S3_BUCKET_NAME>",
+        "s3.region": "<AWS_REGION>",
+        "format.class": "io.confluent.connect.s3.format.json.JsonFormat",
+        "topics.dir": "topics",
+        "topics": "s3.products.data",
+        "aws.access.key.id": "<AWS_ACCESS_KEY_ID>",
+        "aws.secret.access.key": "<AWS_SECRET_ACCESS_KEY>",
+        "confluent.topic.bootstrap.servers": "kafka-0.kafka-headless-service.default.svc.cluster.local:9092",
+        "confluent.topic.replication.factor": "1"
+      }
+    }
+

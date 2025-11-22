@@ -1,0 +1,13 @@
+# Docker Compose 환경변수 설정
+
+# MariaDB 설정
+MYSQL_ROOT_PASSWORD=0000
+MYSQL_DATABASE=inventory_db
+MARIADB_EXTERNAL_PORT=3306
+
+# Kafka 설정
+KAFKA_EXTERNAL_PORT=9094
+KAFKA_CLUSTER_ID=car-pipeline-cluster
+
+# Airflow 설정
+AIRFLOW_UID=50000

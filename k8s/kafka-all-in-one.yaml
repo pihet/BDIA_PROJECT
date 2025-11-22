@@ -1,0 +1,194 @@
+# ------------------------------------------------------------
+# Kafka All-in-One (Zookeeper + Broker) - 로컬 개발 목적
+# - AWS 이동 시: 이 매니페스트를 배포하지 않고 Amazon MSK/ MSK Serverless 의
+#   bootstrap brokers 를 사용하며, Spark/Airflow 환경변수만 갱신하면 됩니다.
+# ------------------------------------------------------------
+# 1. ConfigMap (설정 파일의 내용을 저장)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+data:
+  # 이 데이터가 /etc/kafka/server.properties 파일의 내용이 됩니다.
+  server.properties: |
+    # --- KRaft 모드 설정 ---
+    process.roles=controller,broker
+    # StatefulSet Pod Index에 맞게 0번으로 설정
+    node.id=0
+    # KRaft 오류 해결: 컨트롤러 리스너 이름을 명시
+    controller.listener.names=CONTROLLER 
+    # voter는 Headless Service의 파드 DNS 이름 형태를 사용해야 합니다.
+    controller.quorum.voters=0@kafka-headless-service.default.svc.cluster.local:9093
+
+    # 네트워크 설정
+    listeners=CONTROLLER://:9093,INTERNAL://:9092,EXTERNAL://:9094
+    # advertised.listeners는 Headless Service 주소를 사용합니다.
+    advertised.listeners=INTERNAL://kafka-0.kafka-headless-service.default.svc.cluster.local:9092,EXTERNAL://localhost:30904
+    listener.security.protocol.map=CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+    inter.broker.listener.name=INTERNAL
+
+    # 기타 설정
+    offsets.topic.replication.factor=1
+    transaction.state.log.replication.factor=1
+    transaction.state.log.min.isr=1
+    # log.dirs 경로 설정
+    log.dirs=/var/lib/kafka/data/logs 
+
+---
+
+# 2. Service (내부 통신용 - ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-internal-service
+spec:
+  selector:
+    app: kafka
+  ports:
+  - name: broker-port
+    protocol: TCP
+    port: 9092
+    targetPort: 9092
+  - name: controller-port
+    protocol: TCP
+    port: 9093
+    targetPort: 9093
+  type: ClusterIP
+
+---
+
+# 3. Headless Service (파드 DNS 이름을 제공하여 클러스터 통신에 사용)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-headless-service
+spec:
+  selector:
+    app: kafka
+  ports:
+  - name: broker-port
+    protocol: TCP
+    port: 9092
+    targetPort: 9092
+  - name: controller-port
+    protocol: TCP
+    port: 9093
+    targetPort: 9093
+  # ClusterIP: None을 설정하여 Headless Service로 만듭니다.
+  clusterIP: None
+
+---
+
+# 4. Service (외부 접속용 - NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-external-service
+spec:
+  selector:
+    app: kafka
+  ports:
+  - name: external-broker-port
+    protocol: TCP
+    port: 9094
+    targetPort: 9094
+    nodePort: 30904
+  type: NodePort
+
+---
+
+# 5. StatefulSet (서버 배포)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  # serviceName을 Headless Service 이름으로 지정
+  serviceName: "kafka-headless-service" 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      # Pod 레벨 securityContext: fsGroup 설정 (볼륨 그룹 소유권을 1000으로 변경)
+      securityContext:
+        fsGroup: 1000 
+        
+      volumes:
+      - name: kafka-config-volume 
+        configMap:
+          name: kafka-config
+          items:
+          - key: server.properties
+            path: server.properties
+            
+      # === InitContainers 블록 ===
+      initContainers:
+      - name: kafka-format-storage
+        image: confluentinc/cp-kafka:7.7.0
+        # Init Container는 Root 권한으로 실행되어야 chown 및 format 명령이 작동합니다.
+        securityContext:
+          runAsUser: 0 
+        
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          # 1. [복구 및 강제] chown 명령을 Root 권한으로 다시 실행하여 소유권을 1000:1000으로 변경
+          chown -R 1000:1000 /var/lib/kafka/data
+          
+          # 2. kafka-storage 명령어를 실행
+          /usr/bin/kafka-storage format --ignore-formatted --cluster-id=ZMw7vtz8SgimaRUxLBUbQw --config /etc/kafka/server.properties
+        
+        env:
+        - name: KAFKA_CLUSTER_ID
+          value: ZMw7vtz8SgimaRUxLBUbQw
+          
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /var/lib/kafka/data
+        - name: kafka-config-volume
+          mountPath: /etc/kafka/server.properties
+          subPath: server.properties
+      # === InitContainers 블록 끝 ===
+      
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.7.0
+        ports:
+        - containerPort: 9092
+          name: internal
+        - containerPort: 9093
+          name: controller
+        - containerPort: 9094
+          name: external
+        
+        command:
+        - "/usr/bin/bash"
+        - "-c"
+        - "/usr/bin/kafka-server-start /etc/kafka/server.properties"
+        
+        securityContext:
+          # [최종 권한 설정: Root 강제 실행] PV AccessDeniedException 해결을 위해 Root(0)로 실행합니다.
+          runAsUser: 0
+          # runAsGroup도 Root(0)로 설정하여 절대적인 권한을 부여합니다.
+          runAsGroup: 0 
+        
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /var/lib/kafka/data
+        - name: kafka-config-volume
+          mountPath: /etc/kafka/server.properties
+          subPath: server.properties
+          
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

@@ -1,0 +1,126 @@
+# ------------------------------------------------------------
+# 모델 예측 서비스 Deployment
+# - Airflow와 독립적으로 지속 실행
+# - MariaDB를 주기적으로 폴링하여 새 데이터 처리
+# - 로컬: kubectl apply -f k8s/model-service-deployment.yaml
+# - AWS: 이미지 경로를 ECR로 변경
+# ------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-predictor-service
+  namespace: default
+  labels:
+    app: model-predictor
+spec:
+  replicas: 1  # 필요시 스케일 업 가능
+  selector:
+    matchLabels:
+      app: model-predictor
+  template:
+    metadata:
+      labels:
+        app: model-predictor
+    spec:
+      containers:
+      - name: model-predictor
+        image: model-service:local
+        imagePullPolicy: IfNotPresent
+        
+        # 환경 변수
+        # ============================================
+        # MariaDB 연결 설정
+        # ============================================
+        # 로컬: 외부 MariaDB 사용 시
+        #   MARIADB_HOST: 외부 DB IP 주소 (예: 172.16.11.114)
+        #   MARIADB_PORT: 외부 DB 포트 (예: 3307)
+        #
+        # AWS RDS 사용 시:
+        #   MARIADB_HOST: RDS 엔드포인트 (예: mydb.abc123.ap-northeast-2.rds.amazonaws.com)
+        #   MARIADB_PORT: "3306" (RDS 기본 포트)
+        #
+        # AWS 외부 MariaDB 사용 시:
+        #   MARIADB_HOST: 외부 DB 호스트명 또는 IP
+        #   MARIADB_PORT: 해당 DB 포트
+        # ============================================
+        env:
+        - name: MARIADB_HOST
+          value: "172.16.11.114"  # 로컬: 외부 MariaDB IP | AWS: RDS 엔드포인트 또는 외부 DB 주소
+        - name: MARIADB_PORT
+          value: "3307"  # 로컬: 외부 MariaDB 포트 | AWS: RDS는 3306, 외부 DB는 해당 포트
+        - name: MARIADB_USER
+          value: "root"  # 로컬/AWS: DB 사용자명 (필요에 따라 변경)
+        - name: MARIADB_DATABASE
+          value: "inventory_db"  # 로컬/AWS: 데이터베이스 이름
+        - name: SOURCE_TABLE
+          value: "cdc_products_log"
+        - name: PREDICTION_TABLE
+          value: "product_predictions"
+        - name: POLL_INTERVAL
+          value: "300"  # 5분마다 폴링 (초 단위)
+        - name: BATCH_SIZE
+          value: "100"  # 한 번에 처리할 레코드 수
+        - name: MODEL_PATH
+          value: "/opt/models/product_model.pkl"  # 모델 파일 경로
+        
+        # 비밀번호는 Secret에서 가져오기
+        - name: MARIADB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-secret
+              key: MYSQL_ROOT_PASSWORD
+        
+        # 리소스 제한 (모델이 무거우면 조정 필요)
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        # 헬스체크
+        # - MARIADB_HOST, MARIADB_PORT 환경변수를 사용하여 동적으로 연결 테스트
+        # - 로컬: 외부 MariaDB IP 사용
+        # - AWS: RDS 엔드포인트 또는 외부 DB 주소 사용
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import os; import mysql.connector; conn = mysql.connector.connect(host=os.getenv('MARIADB_HOST', '172.16.11.114'), port=int(os.getenv('MARIADB_PORT', '3307')), user=os.getenv('MARIADB_USER', 'root'), password=os.getenv('MARIADB_PASSWORD'), database=os.getenv('MARIADB_DATABASE', 'inventory_db')); conn.close()"
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        # 모델 파일 마운트 (선택사항)
+        # volumeMounts:
+        # - name: model-storage
+        #   mountPath: /opt/models
+        #   readOnly: true
+      
+      # volumes:
+      # - name: model-storage
+      #   configMap:
+      #     name: model-files
+      #   # 또는 PersistentVolumeClaim 사용 가능
+      
+      restartPolicy: Always
+
+---
+# Service (선택사항 - 다른 서비스에서 모델 API를 호출할 경우)
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-predictor-service
+  namespace: default
+spec:
+  selector:
+    app: model-predictor
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP
+

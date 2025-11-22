@@ -1,0 +1,33 @@
+# 로컬 K8s용 Spark Job
+# - AWS 전환: `k8s/stream-processor-job.eks.yaml` 사용 후
+#   이미지/엔드포인트를 ECR, MSK, RDS 값으로 교체
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stream-processor-job
+  namespace: default
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: spark
+          image: spark-stream:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CHECKPOINT_DIR
+              value: /opt/checkpoints/kafka_to_db
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka-headless-service.default.svc.cluster.local:9092
+            - name: KAFKA_TOPIC
+              value: mariadb.fulfillment.inventory_db.products
+            - name: MARIADB_JDBC_URL
+              value: jdbc:mariadb://mariadb-internal-service:3306/inventory_db?sessionVariables=sql_mode='ANSI_QUOTES'
+            - name: MARIADB_USERNAME
+              value: root
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: MYSQL_ROOT_PASSWORD
