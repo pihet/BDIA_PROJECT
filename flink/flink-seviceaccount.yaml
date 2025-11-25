@@ -1,0 +1,8 @@
+# Flink ServiceAccount 생성
+# Flink Pod들이 Kubernetes API와 상호작용할 때 사용할 ServiceAccount를 정의합니다.
+# RBAC 설정과 함께 사용되어 필요한 권한을 부여받습니다.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flink-sa
+  namespace: flink-busan
