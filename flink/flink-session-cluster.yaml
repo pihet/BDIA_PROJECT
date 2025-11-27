@@ -5,7 +5,7 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
-  name: flink-busan-cluster-20
+  name: flink-busan-cluster
   namespace: flink-busan
 spec:
   image: flink:1.18.1-java17
@@ -23,46 +23,39 @@ spec:
   # JobManager 설정: 클러스터 관리자
   jobManager:
     resource:
-      memory: 2G
+      memory: 1G
       cpu: 1
   # TaskManager 설정: 실제 작업을 실행하는 워커 노드
   taskManager:
+    replicas: 2
     resource:
-      memory: 4G
-      cpu: 2
-  # podTemplate:
-  #   spec:
-  #     containers:
-  #       # 메인 Flink 컨테이너
-  #       - name: flink-main-container
-  #         env:
-  #           - name: TZ
-  #             value: Asia/Seoul
-  #         volumeMounts:
-  #           - name: flink-python-bin-volume
-  #             mountPath: /usr/local/bin
-  #           - name: flink-python-lib-volume
-  #             mountPath: /usr/local/lib
-  #     initContainers:
-  #       # Python 초기화 컨테이너: Flink Python API 설치
-  #       - name: python-init
-  #         image: python:3.10.12-slim
-  #         command:
-  #           - /bin/sh
-  #           - -c
-  #           - |
-  #             pip3 install apache-flink==1.18.1
-  #             mkdir -p /python/link/bin
-  #             mkdir -p /python/link/lib
-  #             cp -r /usr/local/bin/* /python/link/bin/
-  #             cp -r /usr/local/lib/* /python/link/lib/
-  #         volumeMounts:
-  #           - name: flink-python-bin-volume
-  #             mountPath: /python/link/bin
-  #           - name: flink-python-lib-volume
-  #             mountPath: /python/link/lib
-  #     volumes:
-  #       - name: flink-python-bin-volume
-  #         emptyDir: { }
-  #       - name: flink-python-lib-volume
-  #         emptyDir: { }
+      memory: 1G
+      cpu: 1
+  podTemplate:
+    spec:
+      initContainers:
+        - name: lib-downloader
+          image: alpine:3.19
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              mkdir -p /opt/flink/usrlib
+              cd /opt/flink/usrlib
+              echo "Downloading libraries..."
+              wget -q https://repo1.maven.org/maven2/org/apache/flink/flink-connector-jdbc/3.1.2-1.18/flink-connector-jdbc-3.1.2-1.18.jar
+              wget -q https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.3.0/mysql-connector-j-8.3.0.jar
+              wget -q https://repo1.maven.org/maven2/org/apache/flink/flink-connector-kafka/3.0.1-1.18/flink-connector-kafka-3.0.1-1.18.jar
+              wget -q https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.6.1/kafka-clients-3.6.1.jar
+              echo "Download complete."
+          volumeMounts:
+            - name: flink-usrlib
+              mountPath: /opt/flink/usrlib
+      containers:
+        - name: flink-main-container
+          volumeMounts:
+            - name: flink-usrlib
+              mountPath: /opt/flink/usrlib
+      volumes:
+        - name: flink-usrlib
+          emptyDir: {}

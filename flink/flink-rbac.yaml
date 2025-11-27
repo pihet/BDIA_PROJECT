@@ -18,6 +18,8 @@ rules:
   resources:
   - pods
   - configmaps
+  - services
+  - endpoints
   verbs:
   - '*'
 # Deployments에 대한 모든 권한
