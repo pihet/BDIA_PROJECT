@@ -1,0 +1,290 @@
+apiVersion: catalog.cattle.io/v1
+kind: App
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: >-
+      H4sIAAAAAAAA/6xWW5PaOhL+K65+NraBMRdX7QPLsElqEqCAyUN2U1NCboMWWXJJsjOE4r+fkmwuEzg5U6fOm9Vq9e37utsHyNGQlBgCyQGIENIQw6TQ9ijX/0dqNJpAMRlQYgzHgMmQpZDAFnneIkUB/p/qyR8CVWtT7SCBsGr73hMT6b+WSBWav3wmSI6QgN4G1lOgkCPRGFTtYEeyHWmVLKja8bvM6IJQa8s9hKMPVKHLcsVy1IbkBSSi5NwHTtbIf5v7lugtJEBijPu9rJ32BsN1h/SHbdrtRH3SoQ/tXtwbdvtxJyXdzHprMjmFDbXkbVA+uHAXmKFCQVFD8t8DkIJ9RaWZFJBA1QYf1lzS3cyqPiJH424ywjX6QKUwSnKOChKjSvRhx4RF6lzwd5e0dAgP48Ggsx6SVid66LUeorTbWqfDQYuu+3GKcdYfRDEcvx990AVSWzS6JcrYjzekepNEB3wgRXEliYJ+YKUpaqpYUecEI+8j8txzFr1MKq8O8fkT+MCoU9kaU+gkDDfMbMt1QGUeFkpWSE2pw1NGoSI/wpxogypMJS1zFDXDQwb3oDH7wkpIUXBGnSL4UJ2jtcH2LKgV4SU6ppAsY4KZPSSHo/9LC1lBaaSmhDOxsdooyJpjekYtJ68LdL40JO0o8iFn4krigyFqg2Y8f342jLOfzvYcFbWJbBCSQXT0AUVVu0NRuaioFBnb1DJdEyA5HK3CK9OGic3YKXwhBSQAF3FDFifLSs5thWYVKsVSrKUsd24PUJSczyVndA8JfMqm0swVahSWago3TBtlb1JJd6gCJp24kJoZ6S7OYHGyvgBmMSAb6+rY+JqXnNdh6VOfMrFRqPXtzHIVeFvhrdRNPs2rMSdaT2vkwYeCGNvRYfO5qgkwV5ixVytTSDFlYjMnZnsOQJeU4q3Y1MPj1xBqAE4uLQqWMWMpDGECVRP4bakFmh9S7U5FPgC6BBYlr6lHS21k3hxtBHfSb5L+zRvrWqa4RI7USFUHU8h09GtlC5l+Pg3I+rhEWipm9jYVfDWNXMl17avU+NE26ZJu0ebuQjo6Glh+j2UpjOO4Qi1L5cZeQ9hbsxpVxWjNPGnHzCA6t+uYl7bDP83hojiitLZ/hyNuAeBpTooTMD4YyVGdNGtMK8nLHL9YW83rWtIc9iTno8u0GF/13d2rq747HG3t7Sw+j8OuBSyTNui38/C52CiSokdlXnA0aNuTKW0eseByb/GGTtSJW1G31YlXnU4SD5KH7jewO+2O1kMrGqw63aTbT6LYaglpbEbQDrwPaDyzRe9qBnrPi8/eeu+pUggmNvZau1hyIlKd/E94Hr5aVLwp+KANMaU1lp7cvnsLXhHh7v47r7Q3EL/P+tH/jcULLP+AsSa8v2uKFIUOr+3V8OX4/lS/X2+om50AT6P/PI1exp+fl6vJYvkSvfx7NlstV4vRfDlZfJ0slidL9Z9BoCsa0LrHAi4p4ckwGtqlfWPICcaz6XQyXr1EL6PHx8VkuWy2dRKG7Sh46Aa9h2A4TAbRoPsOG9PRl8k5YSqFQGruPWv0aErv3X6bzZ4mk/lkAQn8lHKHWKAKLl83Kbo5fTV0mlEzlSnO7fyx1+cfg3Z8vPDe/j3ah5h+QNGME0giuzXynKh93fl/BAAA//+g/abbewsAAA
+    objectset.rio.cattle.io/id: helm-app
+    objectset.rio.cattle.io/owner-gvk: /v1, Kind=Secret
+    objectset.rio.cattle.io/owner-name: sh.helm.release.v1.kafka-ui.v15
+    objectset.rio.cattle.io/owner-namespace: kafka
+  creationTimestamp: '2025-03-25T22:58:43Z'
+  generation: 30
+  labels:
+    objectset.rio.cattle.io/hash: a5e576f1d689b2a791c3207a2c4165693752da3f
+  managedFields:
+    - apiVersion: catalog.cattle.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:objectset.rio.cattle.io/applied: {}
+            f:objectset.rio.cattle.io/id: {}
+            f:objectset.rio.cattle.io/owner-gvk: {}
+            f:objectset.rio.cattle.io/owner-name: {}
+            f:objectset.rio.cattle.io/owner-namespace: {}
+          f:labels:
+            .: {}
+            f:objectset.rio.cattle.io/hash: {}
+          f:ownerReferences:
+            .: {}
+            k:{"uid":"95882b9a-2046-40d3-bd98-cb75de5f7805"}: {}
+        f:spec:
+          .: {}
+          f:chart:
+            .: {}
+            f:metadata:
+              .: {}
+              f:apiVersion: {}
+              f:appVersion: {}
+              f:description: {}
+              f:icon: {}
+              f:name: {}
+              f:type: {}
+              f:version: {}
+            f:values:
+              .: {}
+              f:affinity: {}
+              f:annotations: {}
+              f:autoscaling:
+                .: {}
+                f:enabled: {}
+                f:maxReplicas: {}
+                f:minReplicas: {}
+                f:targetCPUUtilizationPercentage: {}
+              f:env: {}
+              f:envs:
+                .: {}
+                f:config: {}
+                f:secret: {}
+              f:existingConfigMap: {}
+              f:existingSecret: {}
+              f:fullnameOverride: {}
+              f:image:
+                .: {}
+                f:pullPolicy: {}
+                f:registry: {}
+                f:repository: {}
+                f:tag: {}
+              f:imagePullSecrets: {}
+              f:ingress:
+                .: {}
+                f:annotations: {}
+                f:enabled: {}
+                f:host: {}
+                f:ingressClassName: {}
+                f:path: {}
+                f:pathType: {}
+                f:precedingPaths: {}
+                f:succeedingPaths: {}
+                f:tls:
+                  .: {}
+                  f:enabled: {}
+                  f:secretName: {}
+              f:initContainers: {}
+              f:nameOverride: {}
+              f:networkPolicy:
+                .: {}
+                f:egressRules:
+                  .: {}
+                  f:customRules: {}
+                f:enabled: {}
+                f:ingressRules:
+                  .: {}
+                  f:customRules: {}
+              f:nodeSelector: {}
+              f:podAnnotations: {}
+              f:podLabels: {}
+              f:podSecurityContext: {}
+              f:probes:
+                .: {}
+                f:useHttpsScheme: {}
+              f:replicaCount: {}
+              f:resources: {}
+              f:securityContext: {}
+              f:service:
+                .: {}
+                f:port: {}
+                f:type: {}
+              f:serviceAccount:
+                .: {}
+                f:annotations: {}
+                f:create: {}
+                f:name: {}
+              f:tolerations: {}
+              f:volumeMounts: {}
+              f:volumes: {}
+              f:yamlApplicationConfig: {}
+              f:yamlApplicationConfigConfigMap: {}
+          f:helmVersion: {}
+          f:info:
+            .: {}
+            f:description: {}
+            f:firstDeployed: {}
+            f:lastDeployed: {}
+            f:notes: {}
+            f:status: {}
+          f:name: {}
+          f:namespace: {}
+          f:resources: {}
+          f:values:
+            .: {}
+            f:envs:
+              .: {}
+              f:config:
+                .: {}
+                f:KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: {}
+                f:KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: {}
+                f:KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: {}
+                f:KAFKA_CLUSTERS_0_NAME: {}
+                f:KAFKA_CLUSTERS_0_ZOOKEEPER: {}
+            f:service:
+              .: {}
+              f:type: {}
+          f:version: {}
+      manager: agent
+      operation: Update
+      time: '2025-04-08T23:37:07Z'
+    - apiVersion: catalog.cattle.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          .: {}
+          f:observedGeneration: {}
+          f:summary:
+            .: {}
+            f:state: {}
+      manager: agent
+      operation: Update
+      subresource: status
+      time: '2025-04-08T23:37:07Z'
+  name: kafka-ui
+  namespace: kafka
+  ownerReferences:
+    - apiVersion: v1
+      blockOwnerDeletion: false
+      controller: true
+      kind: Secret
+      name: sh.helm.release.v1.kafka-ui.v15
+      uid: 95882b9a-2046-40d3-bd98-cb75de5f7805
+  resourceVersion: '18028467'
+  uid: 7f9c73d0-1fb9-4a45-85a5-bdbfba3cba44
+spec:
+  chart:
+    metadata:
+      apiVersion: v2
+      appVersion: v0.7.2
+      description: A Helm chart for kafka-UI
+      icon: >-
+        https://github.com/provectus/kafka-ui/raw/master/documentation/images/kafka-ui-logo.png
+      name: kafka-ui
+      type: application
+      version: 0.7.6
+    values:
+      affinity: {}
+      annotations: {}
+      autoscaling:
+        enabled: false
+        maxReplicas: 100
+        minReplicas: 1
+        targetCPUUtilizationPercentage: 80
+      env: {}
+      envs:
+        config: {}
+        secret: {}
+      existingConfigMap: ''
+      existingSecret: ''
+      fullnameOverride: ''
+      image:
+        pullPolicy: IfNotPresent
+        registry: docker.io
+        repository: provectuslabs/kafka-ui
+        tag: ''
+      imagePullSecrets: null
+      ingress:
+        annotations: {}
+        enabled: false
+        host: ''
+        ingressClassName: ''
+        path: /
+        pathType: Prefix
+        precedingPaths: null
+        succeedingPaths: null
+        tls:
+          enabled: false
+          secretName: ''
+      initContainers: {}
+      nameOverride: ''
+      networkPolicy:
+        egressRules:
+          customRules: null
+        enabled: false
+        ingressRules:
+          customRules: null
+      nodeSelector: {}
+      podAnnotations: {}
+      podLabels: {}
+      podSecurityContext: {}
+      probes:
+        useHttpsScheme: false
+      replicaCount: 1
+      resources: {}
+      securityContext: {}
+      service:
+        port: 80
+        type: ClusterIP
+      serviceAccount:
+        annotations: {}
+        create: true
+        name: ''
+      tolerations: null
+      volumeMounts: {}
+      volumes: {}
+      yamlApplicationConfig: {}
+      yamlApplicationConfigConfigMap: {}
+  helmVersion: 3
+  info:
+    description: Upgrade complete
+    firstDeployed: '2025-03-25T22:58:43Z'
+    lastDeployed: '2025-04-08T23:37:05Z'
+    notes: |
+      1. Get the application URL by running these commands:
+        export NODE_PORT=$(kubectl get --namespace kafka -o jsonpath="{.spec.ports[0].nodePort}" services kafka-ui)
+        export NODE_IP=$(kubectl get nodes --namespace kafka -o jsonpath="{.items[0].status.addresses[0].address}")
+        echo http://$NODE_IP:$NODE_PORT
+    status: deployed
+  name: kafka-ui
+  namespace: kafka
+  resources:
+    - apiVersion: v1
+      kind: ServiceAccount
+      name: kafka-ui
+      namespace: kafka
+    - apiVersion: v1
+      kind: ConfigMap
+      name: kafka-ui
+      namespace: kafka
+    - apiVersion: v1
+      kind: Service
+      name: kafka-ui
+      namespace: kafka
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: kafka-ui
+      namespace: kafka
+  values:
+    envs:
+      config:
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka.kafka.svc.cluster.local:9092
+        KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://10.43.64.99:8083
+        KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: kafka-connect
+        KAFKA_CLUSTERS_0_NAME: cdc
+        KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper.zookeeper.svc.cluster.local
+    service:
+      type: NodePort
+  version: 15
+status:
+  observedGeneration: 30
+  summary:
+    state: deployed

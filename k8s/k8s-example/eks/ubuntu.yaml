@@ -1,0 +1,39 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: busan
+  region: ap-northeast-2
+
+vpc:
+  id: "vpc-0addfc51510c52907"
+  securityGroup: "sg-09680140fa8279dab"
+  subnets:
+    private:
+      ap-northeast-2a: { id: "subnet-0727aaf4f31228d2d" }
+      ap-northeast-2b: { id: "subnet-00ec263647c3fb825" }
+      ap-northeast-2c: { id: "subnet-00fcd496db9a842f4" }
+      ap-northeast-2d: { id: "subnet-0e4da8d622757f738" }
+
+managedNodeGroups:
+  - name: spot-workers
+    privateNetworking: true
+    spot: true
+    instanceTypes: ["t4g.medium", "t3.medium", "m5.large"]
+    
+    minSize: 1
+    maxSize: 5
+    desiredCapacity: 2
+    
+    volumeSize: 30
+    volumeType: gp3
+    
+    labels:
+      role: "spot-worker"
+    
+    tags:
+      nodegroup-type: "spot-managed"
+    
+    iam:
+      withAddonPolicies:
+        autoScaler: true
