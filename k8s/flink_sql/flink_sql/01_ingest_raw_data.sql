@@ -31,7 +31,7 @@ CREATE TABLE rds_uservehicle (
     PRIMARY KEY (car_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'uservehicle',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -49,7 +49,7 @@ CREATE TABLE rds_driving_session (
     PRIMARY KEY (session_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'driving_session',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -98,7 +98,7 @@ CREATE TABLE rds_driving_session_info (
     PRIMARY KEY (info_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'driving_session_info',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -119,7 +119,7 @@ CREATE TABLE rds_vehicle_exterior_image (
     PRIMARY KEY (image_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'vehicle_exterior_image',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -143,7 +143,7 @@ CREATE TABLE rds_drowsy_drive (
     PRIMARY KEY (drowsy_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'drowsy_drive',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -162,7 +162,7 @@ CREATE TABLE rds_arrears_detection (
     PRIMARY KEY (detection_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'arrears_detection',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -176,11 +176,12 @@ CREATE TABLE rds_arrears_info (
     total_arrears_amount INT,
     arrears_period VARCHAR(50),
     notice_sent TINYINT,
+    notice_count INT,
     updated_at TIMESTAMP(3),
     PRIMARY KEY (car_plate_number) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'arrears_info',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -199,7 +200,7 @@ CREATE TABLE rds_missing_person_detection (
     PRIMARY KEY (detection_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'missing_person_detection',
     'username' = 'root',
     'password' = 'busan!234pw',
@@ -218,7 +219,7 @@ CREATE TABLE rds_missing_person_info (
     PRIMARY KEY (missing_id) NOT ENFORCED
 ) WITH (
     'connector' = 'jdbc',
-    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/car_db',
+    'url' = 'jdbc:mysql://busan-maria.cf8s8geeaqc9.ap-northeast-2.rds.amazonaws.com:23306/busan_car',
     'table-name' = 'missing_person_info',
     'username' = 'root',
     'password' = 'busan!234pw',
