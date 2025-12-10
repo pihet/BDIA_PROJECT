@@ -1,0 +1,28 @@
+# Kubernetes Secrets - 절대 커밋하지 말 것!
+*-secrets.yaml
+backend-secrets.yaml
+**/*secrets.yaml
+
+# 실제 설정 파일
+*.local.yaml
+
+# Kubeconfig
+kubeconfig
+**/kubeconfig
+
+# 환경 변수 파일
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
