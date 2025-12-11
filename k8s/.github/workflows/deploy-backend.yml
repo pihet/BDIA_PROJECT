@@ -1,0 +1,51 @@
+name: Deploy Backend to EKS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd backend
+          docker build -t $ECR_REGISTRY/backend:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/backend:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/backend:$IMAGE_TAG $ECR_REGISTRY/backend:latest
+          docker push $ECR_REGISTRY/backend:latest
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name busan --region ap-northeast-2
+
+      - name: Deploy to EKS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          kubectl set image deployment/backend-deployment \
+            backend=$ECR_REGISTRY/backend:$IMAGE_TAG \
+            -n default
+          kubectl rollout status deployment/backend-deployment -n default

@@ -25,7 +25,7 @@ spec:
           protocol: TCP
         env:
         - name: VITE_API_BASE_URL
-          value: "http://backend-service"
+          value: "http://k8s-default-busanpro-44b29bfebb-869804217.ap-northeast-2.elb.amazonaws.com/api"
         resources:
           requests:
             memory: "128Mi"
